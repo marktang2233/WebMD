@@ -1,0 +1,72 @@
+{
+  "gauss_Conformer3D_COMPOUND_20260509_104155": {
+    "task_id": "gauss_Conformer3D_COMPOUND_20260509_104155",
+    "params": {
+      "molecule_path": "G:\\\u684c\u9762\\web\\backend\\uploads\\gauss_Conformer3D_COMPOUND_20260509_104155.sdf",
+      "molecule_filename": "Conformer3D_COMPOUND_CID_2244.sdf",
+      "molecule_ext": "sdf",
+      "calc_type": "Opt",
+      "method": "B3LYP",
+      "basis": "6-311++G(d,p)",
+      "charge": 0,
+      "multiplicity": 1,
+      "nproc": 2,
+      "mem": "1GB",
+      "solvent": "water",
+      "description": "Conformer3D_COMPOUND_CID_2244.sdf"
+    },
+    "task_type": "gaussian",
+    "title": "Conformer3D_COMPOUND_CID_2244.sdf",
+    "submitted_at": "2026-05-09 10:41:55",
+    "status": "failed",
+    "progress": 0,
+    "paused": false,
+    "cancelled": false,
+    "current_step": "gaussian",
+    "logs": [
+      {
+        "time": "10:41:55",
+        "level": "info",
+        "message": "Gaussian \u91cf\u5b50\u5316\u5b66\u8ba1\u7b97\u5f00\u59cb...",
+        "step_id": "gaussian"
+      },
+      {
+        "time": "10:41:55",
+        "level": "info",
+        "message": "\u5206\u5b50\u6587\u4ef6\u5df2\u590d\u5236\u5230\u5de5\u4f5c\u76ee\u5f55",
+        "step_id": "gaussian"
+      },
+      {
+        "time": "10:41:55",
+        "level": "error",
+        "message": "Gaussian \u672a\u5b89\u88c5\u6216\u672a\u5728 PATH \u4e2d\u3002",
+        "step_id": "gaussian"
+      },
+      {
+        "time": "10:41:55",
+        "level": "info",
+        "message": "\u8bf7\u786e\u8ba4 Gaussian \u5df2\u5b89\u88c5\u5e76\u914d\u7f6e\u73af\u5883\u53d8\u91cf\uff08g16 \u6216 g09 \u547d\u4ee4\u53ef\u7528\uff09\u3002",
+        "step_id": "gaussian"
+      },
+      {
+        "time": "10:41:55",
+        "level": "error",
+        "message": "Gaussian \u91cf\u5b50\u5316\u5b66\u8ba1\u7b97\u5931\u8d25\u3002",
+        "step_id": "gaussian"
+      }
+    ],
+    "steps": [
+      {
+        "id": "gaussian",
+        "name": "\u91cf\u5b50\u5316\u5b66\u8ba1\u7b97 (Gaussian)",
+        "description": "Gaussian \u91cf\u5b50\u5316\u5b66\u8ba1\u7b97",
+        "status": "failed",
+        "started_at": "2026-05-09 10:41:55"
+      }
+    ],
+    "completed_at": null,
+    "results_ready": false,
+    "work_dir": "G:\\\u684c\u9762\\web\\backend\\tasks\\gauss_Conformer3D_COMPOUND_20260509_104155",
+    "started_at": "2026-05-09 10:41:55"
+  }
+}
