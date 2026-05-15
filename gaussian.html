@@ -1,0 +1,699 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>量子化学计算 - WebMD 模拟器</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha1/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.8.1/font/bootstrap-icons.css">
+    <style>
+        body {
+            background-color: #f8f9fa;
+            padding-top: 20px;
+        }
+        .navbar-brand {
+            font-weight: bold;
+        }
+        .form-container {
+            background: white;
+            border-radius: 15px;
+            box-shadow: 0 4px 20px rgba(0,0,0,0.08);
+            padding: 2.5rem;
+            margin-bottom: 3rem;
+        }
+        .step-card {
+            border-left: 4px solid #6a11cb;
+            padding-left: 1rem;
+            margin-bottom: 2rem;
+        }
+        .upload-zone {
+            border: 2px dashed #6a11cb;
+            border-radius: 10px;
+            padding: 2rem;
+            text-align: center;
+            background-color: #f8f9ff;
+            cursor: pointer;
+            transition: background 0.3s;
+        }
+        .upload-zone:hover {
+            background-color: #eef1ff;
+        }
+        .upload-icon {
+            font-size: 2rem;
+            color: #6a11cb;
+            margin-bottom: 0.5rem;
+        }
+        .file-info {
+            padding: 10px 15px;
+            background: #e8f5e9;
+            border-radius: 8px;
+            display: flex;
+            align-items: center;
+        }
+        .file-info i {
+            font-size: 1.2rem;
+            color: #2e7d32;
+        }
+        .btn-submit {
+            background: linear-gradient(135deg, #6a11cb 0%, #2575fc 100%);
+            border: none;
+            padding: 0.75rem 2rem;
+            font-size: 1.1rem;
+            border-radius: 50px;
+        }
+        .task-select-card {
+            border: 2px solid #dee2e6;
+            border-radius: 10px;
+            padding: 0.75rem 1rem;
+            cursor: pointer;
+            transition: all 0.2s;
+            margin-bottom: 0.5rem;
+        }
+        .task-select-card:hover {
+            border-color: #6a11cb;
+            background-color: #f8f9ff;
+        }
+        .task-select-card.selected {
+            border-color: #6a11cb;
+            background-color: #eef1ff;
+        }
+        .source-tabs .nav-link {
+            color: #6a11cb;
+            font-weight: 500;
+        }
+        .source-tabs .nav-link.active {
+            background-color: #6a11cb;
+            color: #fff;
+            border-color: #6a11cb;
+        }
+    </style>
+</head>
+<body>
+    <nav class="navbar navbar-expand-lg navbar-light bg-white shadow-sm mb-4">
+        <div class="container">
+            <a class="navbar-brand" href="index.html">
+                <i class="bi bi-cpu me-2"></i>WebMD 模拟器
+            </a>
+            <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav">
+                <span class="navbar-toggler-icon"></span>
+            </button>
+            <div class="collapse navbar-collapse" id="navbarNav">
+                <ul class="navbar-nav ms-auto">
+                    <li class="nav-item">
+                        <a class="nav-link" href="submit.html">提交任务</a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link active" href="gaussian.html">量子化学</a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="ai_assistant.html">AI 助手</a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="run.html">运行任务</a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="results.html">结果展示</a>
+                    </li>
+                </ul>
+            </div>
+        </div>
+    </nav>
+
+    <div class="container">
+        <div class="row justify-content-center">
+            <div class="col-lg-10">
+                <div class="form-container">
+                    <h1 class="mb-3"><i class="bi bi-cpu me-2"></i>量子化学计算 (Gaussian)</h1>
+                    <p class="text-muted mb-4">
+                        使用 Gaussian 对分子结构进行量子化学计算。支持单点能 (SP)、构型优化 (Opt)、
+                        振动频率分析 (Freq) 和组合计算 (Opt+Freq)。你可直接上传新分子文件，或从已有 MD 任务中选择配体进行计算。
+                    </p>
+
+                    <form id="gaussian-form">
+                        <!-- Step 1: 分子来源 -->
+                        <div class="step-card">
+                            <h4 class="mb-3"><i class="bi bi-molecule me-2"></i>1. 选择分子来源</h4>
+
+                            <ul class="nav nav-tabs source-tabs mb-3" id="sourceTabs" role="tablist">
+                                <li class="nav-item" role="presentation">
+                                    <button class="nav-link active" id="upload-tab" data-bs-toggle="tab"
+                                            data-bs-target="#upload-panel" type="button" role="tab">
+                                        <i class="bi bi-cloud-upload me-1"></i>上传新文件
+                                    </button>
+                                </li>
+                                <li class="nav-item" role="presentation">
+                                    <button class="nav-link" id="task-tab" data-bs-toggle="tab"
+                                            data-bs-target="#task-panel" type="button" role="tab"
+                                            onclick="loadTaskList()">
+                                        <i class="bi bi-list-task me-1"></i>从已有任务选择
+                                    </button>
+                                </li>
+                            </ul>
+
+                            <div class="tab-content">
+                                <!-- Tab 1: 上传新文件 -->
+                                <div class="tab-pane fade show active" id="upload-panel" role="tabpanel">
+                                    <p class="text-muted mb-2">上传分子结构文件（支持 PDB、XYZ、MOL2、SDF 格式）</p>
+                                    <div class="upload-zone" id="molUploadZone">
+                                        <i class="bi bi-cloud-upload upload-icon"></i>
+                                        <p class="mb-2">点击或拖拽分子文件到此处</p>
+                                        <small class="text-muted">支持 .pdb .xyz .mol2 .sdf 格式</small>
+                                    </div>
+                                    <input type="file" id="molFile" accept=".pdb,.xyz,.mol2,.sdf" hidden>
+                                    <div id="molFileInfo" class="file-info mt-3" style="display:none;">
+                                        <i class="bi bi-file-earmark-arrow-up me-2"></i>
+                                        <span id="molFileName"></span>
+                                        <span id="molFileSize" class="text-muted ms-2"></span>
+                                        <button type="button" class="btn btn-sm btn-outline-danger ms-3" onclick="removeMolFile()">移除</button>
+                                    </div>
+                                </div>
+
+                                <!-- Tab 2: 从已有任务选择 -->
+                                <div class="tab-pane fade" id="task-panel" role="tabpanel">
+                                    <p class="text-muted mb-2">选择之前运行过 MD 但未启用高斯模拟的任务，复用其配体分子进行计算。</p>
+                                    <div id="taskListContainer">
+                                        <div class="text-center py-3 text-muted" id="taskListLoading">
+                                            <i class="bi bi-hourglass-split me-1"></i>正在加载任务列表...
+                                        </div>
+                                        <div id="taskListContent" style="display:none;"></div>
+                                        <div class="text-center py-3 text-muted" id="taskListEmpty" style="display:none;">
+                                            <i class="bi bi-inbox me-1"></i>没有可用的 MD 任务。请先在"提交任务"页面运行 MD 模拟并上传配体。
+                                        </div>
+                                    </div>
+                                    <div id="selectedTaskInfo" class="file-info mt-3" style="display:none;">
+                                        <i class="bi bi-check-circle me-2" style="color:#2e7d32;"></i>
+                                        <span id="selectedTaskLabel"></span>
+                                        <button type="button" class="btn btn-sm btn-outline-danger ms-3" onclick="clearSelectedTask()">取消选择</button>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Step 2: 计算参数 -->
+                        <div class="step-card">
+                            <h4 class="mb-3"><i class="bi bi-sliders me-2"></i>2. 计算参数</h4>
+                            <div class="row">
+                                <div class="col-md-4 mb-3">
+                                    <label for="calcType" class="form-label">计算类型</label>
+                                    <select class="form-select" id="calcType">
+                                        <option value="SP">单点能 (SP)</option>
+                                        <option value="Opt" selected>构型优化 (Opt)</option>
+                                        <option value="Freq">频率分析 (Freq)</option>
+                                        <option value="Opt+Freq">优化 + 频率 (Opt+Freq)</option>
+                                    </select>
+                                </div>
+                                <div class="col-md-4 mb-3">
+                                    <label for="method" class="form-label">计算方法</label>
+                                    <select class="form-select" id="method">
+                                        <option value="B3LYP" selected>B3LYP（推荐）</option>
+                                        <option value="HF">HF</option>
+                                        <option value="MP2">MP2</option>
+                                        <option value="wB97XD">wB97XD</option>
+                                        <option value="M06-2X">M06-2X</option>
+                                        <option value="CAM-B3LYP">CAM-B3LYP</option>
+                                        <optgroup label="━━ 半经验方法（极快，无需基组）━━">
+                                        <option value="PM3">PM3 ★ 推荐（15-30 分钟）</option>
+                                        <option value="AM1">AM1</option>
+                                        </optgroup>
+                                    </select>
+                                </div>
+                                <div class="col-md-4 mb-3" id="basisGroup">
+                                    <label for="basis" class="form-label">基组</label>
+                                    <select class="form-select" id="basis">
+                                        <option value="3-21G">3-21G（极小基，>50原子）</option>
+                                        <option value="6-31G(d)" selected>6-31G(d) ★ 推荐（中等分子）</option>
+                                        <option value="6-31+G(d,p)">6-31+G(d,p)</option>
+                                        <option value="6-311++G(d,p)">6-311++G(d,p)（小分子高精度）</option>
+                                        <option value="cc-pVDZ">cc-pVDZ</option>
+                                        <option value="cc-pVTZ">cc-pVTZ</option>
+                                        <option value="def2SVP">def2-SVP</option>
+                                        <option value="def2TZVP">def2-TZVP</option>
+                                    </select>
+                                </div>
+                            </div>
+                            <div class="row">
+                                <div class="col-md-3 mb-3">
+                                    <label for="charge" class="form-label">电荷</label>
+                                    <input type="number" class="form-control" id="charge" value="0">
+                                </div>
+                                <div class="col-md-3 mb-3">
+                                    <label for="multiplicity" class="form-label">自旋多重度</label>
+                                    <input type="number" class="form-control" id="multiplicity" min="1" value="1">
+                                    <small class="text-muted">1=单重态, 2=二重态, 3=三重态</small>
+                                </div>
+                                <div class="col-md-3 mb-3">
+                                    <label for="nproc" class="form-label">CPU 核心数</label>
+                                    <input type="number" class="form-control" id="nproc" min="1" max="64" value="2">
+                                    <small class="text-muted" id="nprocTip">服务器可用 2 核</small>
+                                </div>
+                                <div class="col-md-3 mb-3">
+                                    <label for="mem" class="form-label">内存</label>
+                                    <input type="text" class="form-control" id="mem" value="1GB">
+                                    <small class="text-muted" id="memTip">建议 ≤ 服务器物理内存的 80%</small>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Step 3: 溶剂模型 -->
+                        <div class="step-card">
+                            <h4 class="mb-3"><i class="bi bi-droplet me-2"></i>3. 溶剂模型</h4>
+                            <div class="row">
+                                <div class="col-md-6 mb-3">
+                                    <label for="solvent" class="form-label">隐式溶剂模型 (SCRF)</label>
+                                    <select class="form-select" id="solvent">
+                                        <option value="water">水 (Water, ε=78.4)</option>
+                                        <option value="ethanol">乙醇 (Ethanol, ε=24.9)</option>
+                                        <option value="methanol">甲醇 (Methanol, ε=32.7)</option>
+                                        <option value="dmso">二甲基亚砜 (DMSO, ε=46.8)</option>
+                                        <option value="acetonitrile">乙腈 (Acetonitrile, ε=35.7)</option>
+                                        <option value="chloroform">氯仿 (Chloroform, ε=4.7)</option>
+                                        <option value="none">气相 (无溶剂)</option>
+                                    </select>
+                                    <small class="text-muted d-block">使用 Gaussian SCRF 隐式溶剂模型（气相计算不添加溶剂）</small>
+                                </div>
+                                <div class="col-md-6 mb-3">
+                                    <label for="description" class="form-label">任务描述（可选）</label>
+                                    <input type="text" class="form-control" id="description"
+                                           placeholder="例如：B3LYP/6-311++G** 构型优化">
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- 智能建议提醒 -->
+                        <div id="suggestionAlert" class="alert alert-warning d-flex align-items-start gap-2 mt-3" style="display:none !important;" role="alert">
+                            <i class="bi bi-lightbulb fs-5 flex-shrink-0 mt-1"></i>
+                            <div id="suggestionText"></div>
+                        </div>
+
+                        <!-- Submit -->
+                        <div class="d-grid gap-2 d-md-flex justify-content-md-end mt-4">
+                            <button type="button" class="btn btn-outline-secondary me-md-2" onclick="window.location.href='index.html'">
+                                <i class="bi bi-arrow-left me-1"></i> 返回首页
+                            </button>
+                            <button type="submit" class="btn btn-submit text-white">
+                                <i class="bi bi-play-circle me-1"></i> 提交计算
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const API_BASE = window.location.protocol === 'file:'
+            ? 'http://192.168.16.130:5000'
+            : window.location.origin;
+        let selectedSourceTaskId = '';
+        let taskListData = [];
+
+        /* ====================================================
+           Tab 1: 上传分子文件
+           ==================================================== */
+        const molUploadZone = document.getElementById('molUploadZone');
+        const molFileInput = document.getElementById('molFile');
+        const molFileInfo = document.getElementById('molFileInfo');
+        const molFileName = document.getElementById('molFileName');
+        const molFileSize = document.getElementById('molFileSize');
+
+        molUploadZone.addEventListener('click', () => molFileInput.click());
+        molUploadZone.addEventListener('dragover', (e) => { e.preventDefault(); molUploadZone.style.backgroundColor = '#e6eeff'; });
+        molUploadZone.addEventListener('dragleave', () => { molUploadZone.style.backgroundColor = ''; });
+        molUploadZone.addEventListener('drop', (e) => {
+            e.preventDefault();
+            molUploadZone.style.backgroundColor = '';
+            if (e.dataTransfer.files.length) {
+                molFileInput.files = e.dataTransfer.files;
+                showMolFileInfo(e.dataTransfer.files[0]);
+            }
+        });
+        molFileInput.addEventListener('change', () => {
+            if (molFileInput.files.length) showMolFileInfo(molFileInput.files[0]);
+        });
+
+        function showMolFileInfo(file) {
+            molFileName.textContent = file.name;
+            molFileSize.textContent = '(' + (file.size / 1024).toFixed(1) + ' KB)';
+            molUploadZone.style.display = 'none';
+            molFileInfo.style.display = 'flex';
+            countAtomsInFile(file);
+        }
+
+        /* ====================================================
+           智能推荐：根据分子大小推荐基组和资源
+           ==================================================== */
+        function countAtomsInFile(file) {
+            const reader = new FileReader();
+            reader.onload = function(e) {
+                var content = e.target.result;
+                var lines = content.split('\n');
+                var atomCount = 0;
+                var ext = file.name.split('.').pop().toLowerCase();
+
+                if (ext === 'xyz') {
+                    atomCount = parseInt(lines[0]) || 0;
+                } else if (ext === 'pdb') {
+                    for (var i = 0; i < lines.length; i++) {
+                        if (lines[i].startsWith('ATOM  ') || lines[i].startsWith('HETATM')) {
+                            atomCount++;
+                        }
+                    }
+                } else if (ext === 'mol2') {
+                    var inAtom = false;
+                    for (var i = 0; i < lines.length; i++) {
+                        var line = lines[i].trim();
+                        if (line === '@<TRIPOS>ATOM') { inAtom = true; continue; }
+                        if (line.startsWith('@<TRIPOS>')) { inAtom = false; continue; }
+                        if (inAtom && line) atomCount++;
+                    }
+                } else if (ext === 'sdf') {
+                    // SDF: 第4行是原子数（前3行是头信息）
+                    if (lines.length >= 4) {
+                        var countsLine = lines[3].trim();
+                        atomCount = parseInt(countsLine.substring(0, 3)) || 0;
+                    }
+                }
+
+                if (atomCount > 0) {
+                    showRecommendation(atomCount);
+                }
+            };
+            reader.readAsText(file);
+        }
+
+        function showRecommendation(atomCount) {
+            var alert = document.getElementById('suggestionAlert');
+            var text = document.getElementById('suggestionText');
+            var basisSelect = document.getElementById('basis');
+            var nprocInput = document.getElementById('nproc');
+            var memInput = document.getElementById('mem');
+
+            var suggestion = '';
+            var recommendedBasis = '6-31G(d)';
+            var recommendedNproc = 2;
+            var recommendedMem = '1GB';
+
+            if (atomCount <= 20) {
+                recommendedBasis = '6-311++G(d,p)';
+                recommendedMem = '2GB';
+                suggestion = '<strong>分子较小</strong>（' + atomCount + ' 原子），可使用 <strong>6-311++G(d,p)</strong> 大基组。';
+            } else if (atomCount <= 50) {
+                recommendedBasis = '6-31G(d)';
+                recommendedMem = '1GB';
+                suggestion = '<strong>分子大小适中</strong>（' + atomCount + ' 原子），推荐 <strong>6-31G(d)</strong> 基组，可在 1-4 小时内完成。';
+            } else if (atomCount <= 100) {
+                recommendedBasis = '6-31G(d)';
+                recommendedMem = '1GB';
+                suggestion = '<strong>分子较大</strong>（' + atomCount + ' 原子），建议使用 <strong>6-31G(d)</strong> 基组，避免使用高精度大基组以免计算时间过长。';
+            } else {
+                recommendedBasis = '3-21G';
+                recommendedMem = '512MB';
+                suggestion = '<strong>分子很大</strong>（' + atomCount + ' 原子），强烈建议使用 <strong>3-21G</strong> 极小基组，服务器只有 2 核，大基组可能需要数天！';
+            }
+
+            // 检查当前选择的基组是否太激进
+            var currentBasis = basisSelect.value;
+            var basisRank = {'3-21G': 0, '6-31G(d)': 1, '6-31+G(d,p)': 2, '6-311++G(d,p)': 3, 'cc-pVDZ': 2, 'cc-pVTZ': 4, 'def2SVP': 2, 'def2TZVP': 4};
+            var rankMap = {'3-21G': 0, '6-31G(d)': 1, '6-31+G(d,p)': 2, '6-311++G(d,p)': 3, 'cc-pVDZ': 2, 'cc-pVTZ': 4, 'def2SVP': 2, 'def2TZVP': 4};
+            var currentRank = rankMap[currentBasis] || 1;
+            var maxRank = atomCount <= 20 ? 3 : (atomCount <= 50 ? 1 : (atomCount <= 100 ? 1 : 0));
+
+            if (currentRank > maxRank) {
+                suggestion += '<br><span class="text-danger"><i class="bi bi-exclamation-triangle me-1"></i>当前基组 <strong>' + currentBasis + '</strong> 对此分子可能过大，建议改为 <strong>' + recommendedBasis + '</strong>。</span>';
+            }
+
+            suggestion += '<br><small class="text-muted">服务器配置：2 核 CPU / 1.6GB 内存 / 磁盘剩余 200MB</small>';
+
+            text.innerHTML = suggestion;
+            alert.style.display = 'flex';
+        }
+
+        // 当方法切换时（PM3/AM1 无基组）
+        document.getElementById('method').addEventListener('change', function() {
+            var semiEmpirical = ['PM3', 'AM1'].includes(this.value);
+            var basisGroup = document.getElementById('basisGroup');
+            if (semiEmpirical) {
+                basisGroup.style.display = 'none';
+            } else {
+                basisGroup.style.display = 'block';
+            }
+        });
+
+        // 当用户切换基组时，更新建议
+        document.getElementById('basis').addEventListener('change', function() {
+            var alert = document.getElementById('suggestionAlert');
+            if (alert.style.display !== 'none') {
+                var atomCount = parseInt(document.body.getAttribute('data-atom-count')) || 0;
+                if (atomCount > 0) showRecommendation(atomCount);
+            }
+        });
+
+        function removeMolFile() {
+            molFileInput.value = '';
+            molUploadZone.style.display = '';
+            molFileInfo.style.display = 'none';
+        }
+
+        /* ====================================================
+           Tab 2: 从已有任务选择
+           ==================================================== */
+        function loadTaskList() {
+            const loading = document.getElementById('taskListLoading');
+            const content = document.getElementById('taskListContent');
+            const empty = document.getElementById('taskListEmpty');
+            loading.style.display = '';
+            content.style.display = 'none';
+            empty.style.display = 'none';
+
+            fetch(`${API_BASE}/tasks?limit=50`)
+                .then(res => res.json())
+                .then(data => {
+                    loading.style.display = 'none';
+                    const tasks = data.tasks || [];
+                    // 筛选：MD 任务 + 已完成 + 有配体 + 未跑高斯
+                    const eligible = tasks.filter(t =>
+                        t.task_type === 'md' &&
+                        t.status === 'completed' &&
+                        t.has_ligand &&
+                        !t.gaussian_ran
+                    );
+                    taskListData = eligible;
+                    if (eligible.length === 0) {
+                        empty.style.display = '';
+                        return;
+                    }
+                    content.style.display = '';
+                    content.innerHTML = eligible.map(t => {
+                        const desc = t.description || t.molecule_filename || t.task_id;
+                        return `
+                            <div class="task-select-card" data-task-id="${t.task_id}"
+                                 onclick="selectTask('${t.task_id}')">
+                                <div class="d-flex justify-content-between align-items-center">
+                                    <div>
+                                        <strong>${desc}</strong>
+                                        <small class="text-muted d-block">
+                                            <i class="bi bi-file-earmark me-1"></i>${t.molecule_filename || '未知文件'}
+                                        </small>
+                                    </div>
+                                    <small class="text-muted">${t.submitted_at}</small>
+                                </div>
+                            </div>
+                        `;
+                    }).join('');
+                })
+                .catch(err => {
+                    loading.style.display = 'none';
+                    content.style.display = '';
+                    content.innerHTML = `<div class="text-danger"><i class="bi bi-exclamation-circle me-1"></i>加载任务列表失败: ${err.message}</div>`;
+                });
+        }
+
+        function selectTask(taskId) {
+            selectedSourceTaskId = taskId;
+            // 高亮选中
+            document.querySelectorAll('.task-select-card').forEach(el => {
+                el.classList.toggle('selected', el.dataset.taskId === taskId);
+            });
+            // 显示选中信息
+            const task = taskListData.find(t => t.task_id === taskId);
+            if (task) {
+                document.getElementById('selectedTaskLabel').textContent =
+                    `已选择: ${task.description || task.molecule_filename || taskId} (${task.molecule_filename || ''})`;
+                document.getElementById('selectedTaskInfo').style.display = 'flex';
+            }
+        }
+
+        function clearSelectedTask() {
+            selectedSourceTaskId = '';
+            document.querySelectorAll('.task-select-card').forEach(el => el.classList.remove('selected'));
+            document.getElementById('selectedTaskInfo').style.display = 'none';
+        }
+
+        /* ====================================================
+           表单提交
+           ==================================================== */
+        document.getElementById('gaussian-form').addEventListener('submit', async function(e) {
+            e.preventDefault();
+
+            const useUpload = document.getElementById('upload-tab').classList.contains('active');
+            if (useUpload && !molFileInput.files.length) {
+                alert('请上传一个分子结构文件，或切换到"从已有任务选择"标签。');
+                return;
+            }
+            if (!useUpload && !selectedSourceTaskId) {
+                alert('请选择一个已有任务，或切换到"上传新文件"标签。');
+                return;
+            }
+
+            const submitBtn = this.querySelector('.btn-submit');
+            const originalText = submitBtn.innerHTML;
+            submitBtn.innerHTML = '<i class="bi bi-hourglass-split me-1"></i> 提交中...';
+            submitBtn.disabled = true;
+
+            try {
+                const formData = new FormData();
+                if (useUpload) {
+                    formData.append('molecule', molFileInput.files[0]);
+                } else {
+                    formData.append('source_task_id', selectedSourceTaskId);
+                }
+                formData.append('calc_type', document.getElementById('calcType').value);
+                var method = document.getElementById('method').value;
+                var isSemiEmpirical = ['PM3', 'AM1'].includes(method);
+                formData.append('method', method);
+                formData.append('basis', isSemiEmpirical ? '' : document.getElementById('basis').value);
+                formData.append('charge', document.getElementById('charge').value);
+                formData.append('multiplicity', document.getElementById('multiplicity').value);
+                formData.append('nproc', document.getElementById('nproc').value);
+                formData.append('mem', document.getElementById('mem').value);
+                formData.append('solvent', document.getElementById('solvent').value);
+                formData.append('description', document.getElementById('description').value);
+
+                const uploadRes = await fetch(`${API_BASE}/upload-gaussian`, {
+                    method: 'POST',
+                    body: formData
+                });
+
+                if (!uploadRes.ok) {
+                    const errData = await uploadRes.json().catch(() => ({}));
+                    throw new Error(errData.error || `提交失败，服务器返回: ${uploadRes.status}`);
+                }
+
+                const uploadResult = await uploadRes.json();
+                const taskId = uploadResult.task_id;
+
+                const runRes = await fetch(`${API_BASE}/run-gaussian`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ task_id: taskId })
+                });
+
+                if (!runRes.ok) {
+                    throw new Error(`启动计算失败，服务器返回: ${runRes.status}`);
+                }
+
+                alert('任务提交成功！即将跳转到监控页面。');
+                window.location.href = `run.html?task_id=${taskId}`;
+
+            } catch (err) {
+                alert('错误: ' + err.message);
+            } finally {
+                submitBtn.innerHTML = originalText;
+                submitBtn.disabled = false;
+            }
+        });
+    </script>
+
+    <!-- 计算结果快速查看（任务完成后显示） -->
+    <div class="container mt-4" id="gaussian-result-section" style="display:none;">
+        <div class="card shadow-sm">
+            <div class="card-header bg-white d-flex justify-content-between align-items-center">
+                <h5 class="mb-0"><i class="bi bi-cpu me-2"></i>最近的 Gaussian 计算结果</h5>
+                <a class="btn btn-outline-primary btn-sm" id="gaussian-result-link" href="#">
+                    <i class="bi bi-box-arrow-up-right me-1"></i>查看完整结果
+                </a>
+            </div>
+            <div class="card-body">
+                <div class="row g-3">
+                    <div class="col-md-3 col-6">
+                        <div class="border rounded p-3 text-center">
+                            <div class="text-muted small">偶极矩</div>
+                            <div class="fs-5 fw-bold" id="qr-dipole">—</div>
+                            <div class="text-muted small">Debye</div>
+                        </div>
+                    </div>
+                    <div class="col-md-3 col-6">
+                        <div class="border rounded p-3 text-center">
+                            <div class="text-muted small">原子数</div>
+                            <div class="fs-5 fw-bold" id="qr-atoms">—</div>
+                            <div class="text-muted small">个原子</div>
+                        </div>
+                    </div>
+                    <div class="col-md-3 col-6">
+                        <div class="border rounded p-3 text-center">
+                            <div class="text-muted small">HOMO / LUMO</div>
+                            <div class="fs-5 fw-bold" id="qr-homo-lumo">—</div>
+                            <div class="text-muted small">能隙</div>
+                        </div>
+                    </div>
+                    <div class="col-md-3 col-6">
+                        <div class="border rounded p-3 text-center">
+                            <div class="text-muted small">最后能量</div>
+                            <div class="fs-6 fw-bold" id="qr-energy">—</div>
+                            <div class="text-muted small">Hartree</div>
+                        </div>
+                    </div>
+                </div>
+                <div class="mt-3" id="qr-modes" style="display:none;">
+                    <div class="text-muted small mb-1">振动频率</div>
+                    <div class="d-flex flex-wrap gap-1" id="qr-freq-list"></div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // 检查当前 URL 是否有 task_id 参数，有则加载结果预览
+        const urlParams = new URLSearchParams(window.location.search);
+        const previewTaskId = urlParams.get('result');
+        if (previewTaskId) {
+            fetch(`${API_BASE}/tasks/${previewTaskId}/status`)
+                .then(function(r) { return r.ok ? r.json() : null; })
+                .then(function(data) {
+                    if (!data || data.status !== 'completed') return;
+                    const gres = data.gaussian_results || data.gaussian;
+                    if (!gres) return;
+                    var section = document.getElementById('gaussian-result-section');
+                    section.style.display = 'block';
+
+                    document.getElementById('qr-dipole').textContent = gres.dipole_moment != null ? gres.dipole_moment.toFixed(4) : '—';
+                    document.getElementById('qr-atoms').textContent = gres.atom_count != null ? gres.atom_count : '—';
+                    document.getElementById('qr-energy').textContent = gres.final_energy != null ? gres.final_energy.toFixed(6) : '—';
+
+                    if (gres.homo_energy != null && gres.lumo_energy != null) {
+                        var gap = (gres.lumo_energy - gres.homo_energy) * 27.2114;
+                        document.getElementById('qr-homo-lumo').innerHTML =
+                            (gres.homo_energy * 27.2114).toFixed(2) + ' / ' + (gres.lumo_energy * 27.2114).toFixed(2) +
+                            ' <span class="text-muted small">eV</span><br><small>能隙 ' + gap.toFixed(2) + ' eV</small>';
+                    }
+
+                    if (gres.frequencies && gres.frequencies.length > 0) {
+                        document.getElementById('qr-modes').style.display = 'block';
+                        var list = document.getElementById('qr-freq-list');
+                        list.innerHTML = gres.frequencies.slice(0, 10).map(function(f) {
+                            return '<span class="badge ' + (f < 0 ? 'bg-danger' : 'bg-secondary') + '">' + f.toFixed(1) + '</span>';
+                        }).join(' ');
+                        if (gres.frequencies.length > 10) {
+                            list.innerHTML += ' <span class="badge bg-light text-muted">+' + (gres.frequencies.length - 10) + '</span>';
+                        }
+                    }
+
+                    document.getElementById('gaussian-result-link').href = 'results.html?task_id=' + previewTaskId;
+                })
+                .catch(function() {});
+        }
+    </script>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha1/dist/js/bootstrap.bundle.min.js"></script>
+</body>
+</html>
