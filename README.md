@@ -76,7 +76,6 @@ cp backend/ai_config.template.py backend/ai_config.py
 # 然后编辑 ai_config.py，填入你的 API Key
 ```
 
-> ⚠️ `ai_config.py` 已加入 `.gitignore`，不会上传到 Git 仓库，防止密钥泄露。
 
 ## 项目结构
 
