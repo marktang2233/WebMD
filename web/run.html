@@ -1,0 +1,957 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>运行任务 - WebMD 模拟器</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha1/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.8.1/font/bootstrap-icons.css">
+    <style>
+        body {
+            background-color: #f8f9fa;
+            padding-top: 20px;
+        }
+        .navbar-brand {
+            font-weight: bold;
+        }
+        .task-card {
+            background: white;
+            border-radius: 15px;
+            box-shadow: 0 4px 20px rgba(0,0,0,0.08);
+            padding: 2rem;
+            margin-bottom: 2rem;
+        }
+        .status-badge {
+            font-size: 0.9rem;
+            padding: 0.5rem 1rem;
+            border-radius: 50px;
+        }
+        .status-pending {
+            background-color: #ffc107;
+            color: #000;
+        }
+        .status-running {
+            background-color: #0d6efd;
+            color: white;
+        }
+        .status-completed {
+            background-color: #198754;
+            color: white;
+        }
+        .status-failed {
+            background-color: #dc3545;
+            color: white;
+        }
+        .step-list {
+            list-style: none;
+            padding-left: 0;
+        }
+        .step-item {
+            display: flex;
+            align-items: center;
+            margin-bottom: 1.5rem;
+            padding-bottom: 1.5rem;
+            border-bottom: 1px solid #eee;
+        }
+        .step-item:last-child {
+            border-bottom: none;
+            margin-bottom: 0;
+            padding-bottom: 0;
+        }
+        .step-icon {
+            width: 50px;
+            height: 50px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin-right: 1.5rem;
+            flex-shrink: 0;
+            font-size: 1.5rem;
+        }
+        .step-icon-pending {
+            background-color: #e9ecef;
+            color: #6c757d;
+        }
+        .step-icon-running {
+            background-color: #d1e7ff;
+            color: #0d6efd;
+        }
+        .step-icon-completed {
+            background-color: #d1f2eb;
+            color: #198754;
+        }
+        .step-details h5 {
+            margin-bottom: 0.25rem;
+        }
+        .progress {
+            height: 10px;
+            margin-top: 0.5rem;
+        }
+        .log-box {
+            background-color: #1e1e1e;
+            color: #f8f9fa;
+            font-family: monospace;
+            padding: 1rem;
+            border-radius: 8px;
+            max-height: 300px;
+            overflow-y: auto;
+            font-size: 0.9rem;
+        }
+        .log-entry {
+            margin-bottom: 0.25rem;
+            white-space: pre-wrap;
+            cursor: pointer;
+            padding: 2px 6px;
+            border-radius: 4px;
+            transition: background-color 0.15s;
+        }
+        .log-entry:hover {
+            background-color: rgba(255,255,255,0.08);
+        }
+        .log-entry.active-log {
+            background-color: rgba(255,255,255,0.12);
+            outline: 1px solid rgba(255,255,255,0.2);
+        }
+        .log-step-badge {
+            display: inline-block;
+            font-size: 10px;
+            padding: 0 6px;
+            border-radius: 8px;
+            margin-right: 4px;
+            font-weight: 500;
+            background-color: rgba(255,255,255,0.12);
+            color: #adb5bd;
+            cursor: pointer;
+            vertical-align: middle;
+        }
+        .log-step-badge:hover {
+            background-color: rgba(255,255,255,0.2);
+        }
+        .log-time {
+            color: #6c757d;
+        }
+        .log-info {
+            color: #6ea8fe;
+        }
+        .log-success {
+            color: #75b798;
+        }
+        .log-warning {
+            color: #ffda6a;
+        }
+        .log-error {
+            color: #ea868f;
+        }
+
+        /* 步骤卡片点击高亮 */
+        .step-item {
+            cursor: pointer;
+            transition: background-color 0.15s;
+            border-radius: 8px;
+            padding: 8px;
+        }
+        .step-item:hover {
+            background-color: rgba(13, 110, 253, 0.05);
+        }
+        .step-item.step-filter-active {
+            background-color: rgba(13, 110, 253, 0.1);
+            outline: 2px solid #0d6efd;
+        }
+        /* 日志过滤提示条 */
+        #log-filter-bar {
+            display: none;
+            padding: 6px 12px;
+            background: rgba(13, 110, 253, 0.15);
+            border-radius: 6px;
+            margin-bottom: 8px;
+            font-size: 13px;
+        }
+    </style>
+</head>
+<body>
+    <nav class="navbar navbar-expand-lg navbar-light bg-white shadow-sm mb-4">
+        <div class="container">
+            <a class="navbar-brand" href="index.html">
+                <i class="bi bi-cpu me-2"></i>WebMD 模拟器
+            </a>
+            <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav">
+                <span class="navbar-toggler-icon"></span>
+            </button>
+            <div class="collapse navbar-collapse" id="navbarNav">
+                <ul class="navbar-nav ms-auto">
+                    <li class="nav-item">
+                        <a class="nav-link" href="submit.html">提交任务</a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="gaussian.html">量子化学</a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="ai_assistant.html">AI 助手</a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link active" href="run.html">运行任务</a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="results.html">结果展示</a>
+                    </li>
+                </ul>
+            </div>
+        </div>
+    </nav>
+
+    <div class="container">
+        <h1 class="mb-4"><i class="bi bi-play-circle me-2"></i>运行任务</h1>
+        <p class="text-muted mb-4">监控你的分子动力学模拟进度。任务按顺序处理：能量最小化 → NVT 平衡 → NPT 平衡 → 生产模拟。</p>
+
+        <!-- Task Card -->
+        <div class="task-card">
+            <div class="d-flex justify-content-between align-items-start mb-4">
+                <div>
+                    <h3 class="mb-1" id="task-title">加载中...</h3>
+                    <p class="text-muted mb-0" id="task-info">任务ID： <strong id="task-id-display">—</strong> | 提交时间： <span id="task-submitted">—</span></p>
+                </div>
+                <div>
+                    <span id="global-status" class="status-badge status-running">运行中</span>
+                </div>
+            </div>
+
+            <!-- Overall Progress Bar -->
+            <div class="mb-4">
+                <div class="d-flex justify-content-between mb-2">
+                    <span>总体进度</span>
+                    <span id="overall-percent">0%</span>
+                </div>
+                <div class="progress">
+                    <div id="overall-progress-bar" class="progress-bar progress-bar-striped progress-bar-animated" role="progressbar" style="width: 0%"></div>
+                </div>
+                <small class="text-muted mt-1 d-block" id="total-elapsed-display" style="display:none !important;"><i class="bi bi-stopwatch me-1"></i>总用时：<span id="total-elapsed">—</span></small>
+            </div>
+
+            <!-- Steps -->
+            <h4 class="mb-3">模拟流程</h4>
+            <ul class="step-list">
+                <li class="step-item">
+                    <div class="step-icon step-icon-pending" id="step-icon-em">
+                        <i class="bi bi-clock"></i>
+                    </div>
+                    <div class="step-details flex-grow-1" id="step-em">
+                        <h5>能量最小化 (EM)</h5>
+                        <p class="text-muted mb-1">最陡下降最小化以消除空间冲突。</p>
+                        <small class="text-muted">等待中</small>
+                    </div>
+                </li>
+                <li class="step-item">
+                    <div class="step-icon step-icon-pending" id="step-icon-nvt">
+                        <i class="bi bi-clock"></i>
+                    </div>
+                    <div class="step-details flex-grow-1" id="step-nvt">
+                        <h5>NVT 平衡</h5>
+                        <p class="text-muted mb-1">恒定粒子数、体积、温度（300 K）。</p>
+                        <small class="text-muted">等待中</small>
+                    </div>
+                </li>
+                <li class="step-item">
+                    <div class="step-icon step-icon-pending" id="step-icon-npt">
+                        <i class="bi bi-clock"></i>
+                    </div>
+                    <div class="step-details" id="step-npt">
+                        <h5>NPT 平衡</h5>
+                        <p class="text-muted mb-1">恒定粒子数、压力（1 bar）、温度（300 K）。</p>
+                        <small class="text-muted">等待中</small>
+                    </div>
+                </li>
+                <li class="step-item">
+                    <div class="step-icon step-icon-pending" id="step-icon-md">
+                        <i class="bi bi-clock"></i>
+                    </div>
+                    <div class="step-details" id="step-md">
+                        <h5>生产模拟</h5>
+                        <p class="text-muted mb-1">生产运行以收集数据。</p>
+                        <small class="text-muted">等待中</small>
+                    </div>
+                </li>
+            </ul>
+
+            <!-- Live Log -->
+            <h4 class="mt-5 mb-3">实时日志</h4>
+            <div id="log-filter-bar">
+                <i class="bi bi-funnel me-1"></i><span id="log-filter-text">显示所有日志</span>
+                <button class="btn btn-sm btn-outline-light ms-2" onclick="clearLogFilter()" style="font-size:12px;padding:1px 8px;">✕ 清除过滤</button>
+            </div>
+            <div class="log-box" id="log-container">
+                <div class="log-entry text-muted">
+                    <span>等待任务日志...</span>
+                </div>
+            </div>
+            <div class="mt-3">
+                <button class="btn btn-outline-secondary btn-sm" id="pause-btn">
+                    <i class="bi bi-pause"></i> 暂停
+                </button>
+                <button class="btn btn-outline-danger btn-sm ms-2" id="cancel-btn">
+                    <i class="bi bi-x-circle"></i> 取消
+                </button>
+                <button class="btn btn-outline-primary btn-sm ms-2" id="refresh-btn">
+                    <i class="bi bi-arrow-clockwise"></i> 刷新
+                </button>
+                <button class="btn btn-outline-info btn-sm ms-2" id="export-log-btn">
+                    <i class="bi bi-download"></i> 导出日志
+                </button>
+                <a class="btn btn-success btn-sm ms-2 d-none" id="view-result-btn"
+                   target="_self">
+                    <i class="bi bi-bar-chart"></i> 查看结果
+                </a>
+            </div>
+        </div>
+
+        <!-- Previous Tasks (Optional) -->
+        <h4 class="mt-5 mb-3">近期任务</h4>
+        <div class="table-responsive">
+            <table class="table table-hover">
+                <thead>
+                    <tr>
+                        <th>任务ID</th>
+                        <th>描述</th>
+                        <th>状态</th>
+                        <th>提交时间</th>
+                        <th>操作</th>
+                    </tr>
+                </thead>
+                <tbody id="recent-tasks-body">
+                    <!-- 近期任务列表由 JavaScript 动态渲染 -->
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+    <script>
+        /* ====================================================
+           后端 API 基础地址（你的 Linux GROMACS 服务器）
+           ==================================================== */
+        const API_BASE = window.location.protocol === 'file:'
+            ? 'http://192.168.16.130:5000'
+            : window.location.origin;
+
+        /* ====================================================
+           从 URL 查询参数中获取 task_id
+           例如：run.html?task_id=sim-20250413-001
+           ==================================================== */
+        const urlParams = new URLSearchParams(window.location.search);
+        const TASK_ID = urlParams.get('task_id');
+
+        // 页面中需要动态更新的 DOM 元素
+        const taskTitle = document.getElementById('task-title');
+        const taskInfo = document.getElementById('task-info');
+        const taskIdDisplay = document.getElementById('task-id-display');
+        const taskSubmitted = document.getElementById('task-submitted');
+        const globalStatus = document.getElementById('global-status');
+        const overallBar = document.getElementById('overall-progress-bar');
+        const overallPercent = document.getElementById('overall-percent');
+        const logContainer = document.getElementById('log-container');
+        const pauseBtn = document.getElementById('pause-btn');
+        const cancelBtn = document.getElementById('cancel-btn');
+        const refreshBtn = document.getElementById('refresh-btn');
+        const exportLogBtn = document.getElementById('export-log-btn');
+        const recentTasksBody = document.getElementById('recent-tasks-body');
+
+        let lastLogTime = '';       // 记录最后一次获取日志的时间，用于增量拉取
+        let pollTimeout = null;     // 轮询定时器句柄
+        let polling = false;        // 是否正在轮询中
+        let activeFilterStep = '';  // 当前日志过滤的步骤 ID，空表示不过滤
+
+        /* ====================================================
+           步骤 ID → 中文名称对照表
+           ==================================================== */
+        const STEP_NAMES = {
+            'pdb2gmx':  'pdb2gmx',
+            'solvate':  '溶剂',
+            'em':       'EM',
+            'nvt':      'NVT',
+            'npt':      'NPT',
+            'md':       'MD',
+            'analysis': '分析',
+            'gaussian': 'Gaussian',
+            'docking':  '对接',
+        };
+
+        /* ====================================================
+           工具函数：向日志容器中添加一条日志记录
+           ==================================================== */
+        function addLogEntry(text, type = 'info', stepId = '') {
+            const entry = document.createElement('div');
+            entry.className = 'log-entry';
+            const now = new Date();
+            const timeStr = now.getHours().toString().padStart(2, '0') + ':' +
+                           now.getMinutes().toString().padStart(2, '0') + ':' +
+                           now.getSeconds().toString().padStart(2, '0');
+            let typeClass = 'log-info';
+            if (type === 'success') typeClass = 'log-success';
+            else if (type === 'warning') typeClass = 'log-warning';
+            else if (type === 'error') typeClass = 'log-error';
+
+            // 步骤标签
+            let stepBadge = '';
+            if (stepId) {
+                const stepName = STEP_NAMES[stepId] || stepId;
+                stepBadge = `<span class="log-step-badge" data-step="${stepId}" title="点击跳转到此步骤">${stepName}</span>`;
+            }
+
+            entry.innerHTML = `<span class="log-time">${timeStr}</span> <span class="${typeClass}">[${type.toUpperCase()}]</span> ${stepBadge}${text}`;
+            entry.dataset.stepId = stepId || '';
+
+            // 点击日志 → 跳转到对应步骤卡片
+            entry.addEventListener('click', function(e) {
+                if (e.target.classList.contains('log-step-badge')) {
+                    // 点击 badge 本身：跳转步骤 + 过滤
+                    const sid = e.target.dataset.step;
+                    filterLogByStep(sid);
+                    scrollToStep(sid);
+                } else {
+                    // 点击日志其它区域：仅跳转
+                    if (stepId) {
+                        scrollToStep(stepId);
+                    }
+                }
+            });
+
+            logContainer.appendChild(entry);
+
+            // 限制日志 DOM 数量不超过 500 条，防止页面卡顿
+            const MAX_LOG_LINES = 500;
+            while (logContainer.children.length > MAX_LOG_LINES) {
+                logContainer.removeChild(logContainer.firstChild);
+            }
+
+            logContainer.scrollTop = logContainer.scrollHeight;
+        }
+
+        /* ====================================================
+           工具函数：将后端返回的任务状态映射为中文显示
+           ==================================================== */
+        const STATUS_MAP = {
+            'pending':     { text: '等待中',   class: 'status-pending' },
+            'running':     { text: '运行中',   class: 'status-running' },
+            'completed':   { text: '已完成',   class: 'status-completed' },
+            'failed':      { text: '失败',     class: 'status-failed' },
+            'cancelled':   { text: '已取消',   class: 'status-failed' },
+            'paused':      { text: '已暂停',   class: 'status-pending' },
+        };
+
+        /* ====================================================
+           工具函数：动态创建步骤的 DOM 元素（若不存在）
+           ==================================================== */
+        function ensureStepElement(stepId, stepData) {
+            const existing = document.getElementById(`step-${stepId}`);
+            if (existing) return existing;
+
+            const stepList = document.querySelector('.step-list');
+            const li = document.createElement('li');
+            li.className = 'step-item';
+            li.innerHTML = `
+                <div class="step-icon step-icon-pending" id="step-icon-${stepId}">
+                    <i class="bi bi-clock"></i>
+                </div>
+                <div class="step-details flex-grow-1" id="step-${stepId}">
+                    <h5>${stepData.name}</h5>
+                    <p class="text-muted mb-1">${stepData.description}</p>
+                    <small class="text-muted">等待中</small>
+                </div>
+            `;
+            stepList.appendChild(li);
+            return document.getElementById(`step-${stepId}`);
+        }
+
+        /* ====================================================
+           工具函数：更新步骤图标的样式（pending / running / completed）
+           ==================================================== */
+        function updateStepIcon(stepId, status) {
+            const iconDiv = document.getElementById(`step-icon-${stepId}`);
+            if (!iconDiv) return;
+            // 移除所有已有的状态样式
+            iconDiv.classList.remove('step-icon-pending', 'step-icon-running', 'step-icon-completed');
+            if (status === 'completed') {
+                iconDiv.classList.add('step-icon-completed');
+                iconDiv.innerHTML = '<i class="bi bi-check-circle"></i>';
+            } else if (status === 'running') {
+                iconDiv.classList.add('step-icon-running');
+                iconDiv.innerHTML = '<i class="bi bi-arrow-repeat"></i>';
+            } else if (status === 'failed') {
+                iconDiv.classList.add('step-icon-pending');
+                iconDiv.style.backgroundColor = '#f8d7da';
+                iconDiv.style.color = '#dc3545';
+                iconDiv.innerHTML = '<i class="bi bi-x-circle"></i>';
+            } else if (status === 'cancelled') {
+                iconDiv.classList.add('step-icon-pending');
+                iconDiv.style.backgroundColor = '#e9ecef';
+                iconDiv.style.color = '#6c757d';
+                iconDiv.innerHTML = '<i class="bi bi-slash-circle"></i>';
+            } else {
+                iconDiv.classList.add('step-icon-pending');
+                iconDiv.innerHTML = '<i class="bi bi-clock"></i>';
+            }
+        }
+
+        /* ====================================================
+           工具函数：更新步骤的进度信息
+           stepData: { id, status, progress, name, description, detail }
+           若步骤元素不存在则动态创建
+           ==================================================== */
+        function updateStepDetails(stepId, stepData) {
+            const stepDiv = ensureStepElement(stepId, stepData);
+
+            // 更新图标状态
+            updateStepIcon(stepId, stepData.status);
+
+            // 更新步骤描述和进度
+            if (stepData.status === 'completed') {
+                stepDiv.innerHTML = `
+                    <h5>${stepData.name}</h5>
+                    <p class="text-muted mb-1">${stepData.description}</p>
+                    <small class="text-success"><i class="bi bi-check"></i> ${stepData.detail || '完成'}</small>
+                    ${stepData.elapsed ? `<small class="text-muted ms-2"><i class="bi bi-stopwatch"></i> ${stepData.elapsed}</small>` : ''}
+                `;
+            } else if (stepData.status === 'running' && stepData.progress != null) {
+                stepDiv.innerHTML = `
+                    <h5>${stepData.name}</h5>
+                    <p class="text-muted mb-1">${stepData.description}</p>
+                    <div class="d-flex align-items-center">
+                        <div class="flex-grow-1 me-3">
+                            <div class="progress">
+                                <div class="progress-bar" role="progressbar" style="width: ${stepData.progress}%"></div>
+                            </div>
+                        </div>
+                        <small>${stepData.detail || Math.round(stepData.progress) + '%'}</small>
+                    </div>
+                    ${stepData.elapsed ? `<small class="text-muted"><i class="bi bi-stopwatch"></i> ${stepData.elapsed}</small>` : ''}
+                `;
+            } else if (stepData.status === 'running') {
+                stepDiv.innerHTML = `
+                    <h5>${stepData.name}</h5>
+                    <p class="text-muted mb-1">${stepData.description}</p>
+                    <small class="text-info"><i class="bi bi-arrow-repeat"></i> 运行中</small>
+                    ${stepData.elapsed ? `<small class="text-muted ms-2"><i class="bi bi-stopwatch"></i> ${stepData.elapsed}</small>` : ''}
+                `;
+            } else if (stepData.status === 'failed') {
+                stepDiv.innerHTML = `
+                    <h5>${stepData.name} <span class="badge bg-danger">失败</span></h5>
+                    <p class="text-muted mb-1">${stepData.description}</p>
+                    <small class="text-danger"><i class="bi bi-x-circle"></i> ${stepData.detail || '步骤失败'}</small>
+                    ${stepData.elapsed ? `<small class="text-muted ms-2"><i class="bi bi-stopwatch"></i> ${stepData.elapsed}</small>` : ''}
+                `;
+            } else if (stepData.status === 'cancelled') {
+                stepDiv.innerHTML = `
+                    <h5>${stepData.name} <span class="badge bg-secondary">已取消</span></h5>
+                    <p class="text-muted mb-1">${stepData.description}</p>
+                    <small class="text-muted"><i class="bi bi-slash-circle"></i> ${stepData.detail || '步骤已取消'}</small>
+                `;
+            } else {
+                stepDiv.innerHTML = `
+                    <h5>${stepData.name}</h5>
+                    <p class="text-muted mb-1">${stepData.description}</p>
+                    <small class="text-muted">等待中</small>
+                `;
+            }
+        }
+
+        /* ====================================================
+           核心函数：向后端请求任务状态和进度
+           GET /api/tasks/{task_id}/status
+           ==================================================== */
+        async function fetchTaskStatus() {
+            if (!TASK_ID) return;
+            try {
+                const response = await fetch(`${API_BASE}/tasks/${TASK_ID}/status`);
+                if (!response.ok) throw new Error(`HTTP ${response.status}`);
+                const data = await response.json();
+
+                // 更新任务标题和信息
+                taskTitle.textContent = data.title || `${data.description || '模拟任务'}`;
+                taskIdDisplay.textContent = data.task_id;
+                taskSubmitted.textContent = data.submitted_at || '';
+
+                // 更新全局状态徽章
+                const statusInfo = STATUS_MAP[data.status] || { text: data.status, class: 'status-pending' };
+                globalStatus.className = `status-badge ${statusInfo.class}`;
+                globalStatus.textContent = statusInfo.text;
+
+                // 更新总体进度条
+                const progress = data.progress || 0;
+                overallBar.style.width = progress + '%';
+                overallBar.setAttribute('aria-valuenow', progress);
+                overallPercent.textContent = Math.round(progress) + '%';
+
+                // 更新总用时
+                const totalElapsedDisplay = document.getElementById('total-elapsed-display');
+                const totalElapsed = document.getElementById('total-elapsed');
+                if (data.elapsed) {
+                    totalElapsed.textContent = data.elapsed;
+                    totalElapsedDisplay.style.display = 'block !important';
+                    totalElapsedDisplay.style.removeProperty('display');
+                }
+
+                // 更新各个步骤状态
+                if (data.steps) {
+                    data.steps.forEach(step => {
+                        updateStepDetails(step.id, step);
+                    });
+                }
+
+                // 如果任务已完成或失败，停止轮询
+                if (data.status === 'completed' || data.status === 'failed' || data.status === 'cancelled') {
+                    polling = false;
+                    if (pollTimeout) {
+                        clearTimeout(pollTimeout);
+                        pollTimeout = null;
+                    }
+                }
+
+                // 控制"查看结果"按钮：只有已完成才显示
+                const viewResultBtn = document.getElementById('view-result-btn');
+                if (data.status === 'completed') {
+                    viewResultBtn.href = `results.html?task_id=${TASK_ID}`;
+                    viewResultBtn.classList.remove('d-none');
+                } else {
+                    viewResultBtn.classList.add('d-none');
+                }
+
+                return data;
+            } catch (error) {
+                console.error('获取任务状态失败:', error);
+            }
+        }
+
+        /* ====================================================
+           核心函数：向后端拉取最新的日志
+           GET /api/tasks/{task_id}/logs?since={lastLogTime}
+           since 参数实现增量拉取，避免重复获取旧日志
+           ==================================================== */
+        async function fetchLogs() {
+            if (!TASK_ID) return;
+            try {
+                const url = `${API_BASE}/tasks/${TASK_ID}/logs` +
+                            (lastLogTime ? `?since=${encodeURIComponent(lastLogTime)}` : '');
+                const response = await fetch(url);
+                if (!response.ok) throw new Error(`HTTP ${response.status}`);
+                const data = await response.json();
+
+                // 将新增的日志追加到页面
+                if (data.logs && data.logs.length > 0) {
+                    data.logs.forEach(log => {
+                        addLogEntry(log.message, log.level || 'info', log.step_id || '');
+                    });
+                    // 更新最后一次日志时间
+                    lastLogTime = data.logs[data.logs.length - 1].time || '';
+                }
+            } catch (error) {
+                console.error('获取日志失败:', error);
+            }
+        }
+
+        /* ----------------------------------------------------
+           调度下一次轮询（递归 setTimeout 替代 setInterval）
+           每次等两个请求都完成后，再等 3 秒发起下一次
+           ---------------------------------------------------- */
+        async function scheduleNextPoll() {
+            if (!TASK_ID) return;
+            polling = true;
+            await Promise.all([fetchTaskStatus(), fetchLogs()]);
+            if (!polling) return;   // 如果已取消轮询，不再调度
+            pollTimeout = setTimeout(scheduleNextPoll, 3000);
+        }
+
+        /* ====================================================
+           核心函数：获取近期任务列表
+           GET /api/tasks
+           ==================================================== */
+        async function fetchRecentTasks() {
+            try {
+                const response = await fetch(`${API_BASE}/tasks?limit=5`);
+                if (!response.ok) throw new Error(`HTTP ${response.status}`);
+                const data = await response.json();
+
+                // 清空表格，动态渲染每一行
+                recentTasksBody.innerHTML = '';
+                (data.tasks || []).forEach(task => {
+                    const statusInfo = STATUS_MAP[task.status] || { text: task.status, class: 'status-pending' };
+                    const tr = document.createElement('tr');
+                    tr.innerHTML = `
+                        <td>${task.task_id}</td>
+                        <td>${task.description || '-'}</td>
+                        <td><span class="status-badge ${statusInfo.class}">${statusInfo.text}</span></td>
+                        <td>${task.submitted_at || '-'}</td>
+                        <td>
+                            ${task.status === 'completed'
+                                ? `<a href="results.html?task_id=${task.task_id}" class="btn btn-sm btn-outline-primary">查看结果</a>`
+                                : task.status === 'running' || task.status === 'pending'
+                                    ? `<a href="run.html?task_id=${task.task_id}" class="btn btn-sm btn-outline-secondary">查看进度</a>`
+                                    : `<button class="btn btn-sm btn-outline-secondary" disabled>日志</button>`
+                            }
+                        </td>
+                    `;
+                    recentTasksBody.appendChild(tr);
+                });
+            } catch (error) {
+                console.error('获取任务列表失败:', error);
+            }
+        }
+
+        /* ====================================================
+           Pause / Resume：暂停或恢复模拟任务
+           POST /api/tasks/{task_id}/pause
+           POST /api/tasks/{task_id}/resume
+           ==================================================== */
+        pauseBtn.addEventListener('click', async function() {
+            if (!TASK_ID) return;
+            const isCurrentlyPaused = pauseBtn.getAttribute('data-paused') === 'true';
+            try {
+                const endpoint = isCurrentlyPaused ? 'resume' : 'pause';
+                const response = await fetch(`${API_BASE}/tasks/${TASK_ID}/${endpoint}`, { method: 'POST' });
+                if (!response.ok) throw new Error(`HTTP ${response.status}`);
+
+                if (isCurrentlyPaused) {
+                    pauseBtn.innerHTML = '<i class="bi bi-pause"></i> 暂停';
+                    pauseBtn.setAttribute('data-paused', 'false');
+                    addLogEntry('模拟已恢复。', 'info');
+                } else {
+                    pauseBtn.innerHTML = '<i class="bi bi-play"></i> 恢复';
+                    pauseBtn.setAttribute('data-paused', 'true');
+                    addLogEntry('模拟已暂停。', 'warning');
+                }
+            } catch (error) {
+                alert('操作失败：' + error.message);
+            }
+        });
+
+        /* ====================================================
+           Cancel：取消模拟任务
+           POST /api/tasks/{task_id}/cancel
+           ==================================================== */
+        cancelBtn.addEventListener('click', async function() {
+            if (!TASK_ID) return;
+            if (!confirm('确定要取消此模拟吗？所有进度都将丢失。')) return;
+            try {
+                const response = await fetch(`${API_BASE}/tasks/${TASK_ID}/cancel`, { method: 'POST' });
+                if (!response.ok) throw new Error(`HTTP ${response.status}`);
+
+                globalStatus.className = 'status-badge status-failed';
+                globalStatus.textContent = '已取消';
+                addLogEntry('模拟已被用户取消。', 'error');
+                pauseBtn.disabled = true;
+                cancelBtn.disabled = true;
+                polling = false;
+                if (pollTimeout) {
+                    clearTimeout(pollTimeout);
+                    pollTimeout = null;
+                }
+            } catch (error) {
+                alert('取消失败：' + error.message);
+            }
+        });
+
+        /* ====================================================
+           Refresh：手动触发一次状态和日志刷新
+           ==================================================== */
+        refreshBtn.addEventListener('click', function() {
+            fetchTaskStatus();
+            fetchLogs();
+            addLogEntry('手动刷新已触发。', 'info');
+        });
+
+        /* ====================================================
+           Export Log：导出当前任务日志为文本文件
+           请求后端 /tasks/{id}/logs/download 接口，
+           将返回的 Blob 下载到本地
+           ==================================================== */
+        exportLogBtn.addEventListener('click', async function() {
+            if (!TASK_ID) {
+                alert('没有正在查看的任务，无法导出日志。');
+                return;
+            }
+            try {
+                // 显示加载状态
+                const originalHTML = exportLogBtn.innerHTML;
+                exportLogBtn.innerHTML = '<span class="spinner-border spinner-border-sm" role="status"></span> 导出中...';
+                exportLogBtn.disabled = true;
+
+                const response = await fetch(`${API_BASE}/tasks/${TASK_ID}/logs/download`);
+                if (!response.ok) throw new Error(`HTTP ${response.status}`);
+
+                // 获取 Blob 并创建下载链接
+                const blob = await response.blob();
+                const url = URL.createObjectURL(blob);
+                const a = document.createElement('a');
+                a.href = url;
+                a.download = `${TASK_ID}_logs.txt`;
+                document.body.appendChild(a);
+                a.click();
+                document.body.removeChild(a);
+                URL.revokeObjectURL(url);
+
+                addLogEntry('日志文件已导出。', 'success');
+            } catch (error) {
+                alert('导出日志失败：' + error.message);
+                addLogEntry('导出日志失败: ' + error.message, 'error');
+            } finally {
+                exportLogBtn.innerHTML = '<i class="bi bi-download"></i> 导出日志';
+                exportLogBtn.disabled = false;
+            }
+        });
+
+        /* ====================================================
+           scrollToStep：滚动到指定步骤卡片并高亮
+           ==================================================== */
+        function scrollToStep(stepId) {
+            // 移除所有高亮
+            document.querySelectorAll('.step-item.step-filter-active').forEach(el => {
+                el.classList.remove('step-filter-active');
+            });
+            // 移除所有日志高亮
+            document.querySelectorAll('.log-entry.active-log').forEach(el => {
+                el.classList.remove('active-log');
+            });
+
+            // 找到步骤卡片
+            const stepDiv = document.getElementById(`step-${stepId}`);
+            if (!stepDiv) return;
+
+            // 找到最近的 .step-item 祖先
+            const stepItem = stepDiv.closest('.step-item');
+            if (!stepItem) return;
+
+            // 高亮
+            stepItem.classList.add('step-filter-active');
+
+            // 滚动到可视区域
+            stepItem.scrollIntoView({ behavior: 'smooth', block: 'center' });
+        }
+
+        /* ====================================================
+           filterLogByStep：按步骤 ID 过滤日志
+           ==================================================== */
+        function filterLogByStep(stepId) {
+            activeFilterStep = stepId;
+
+            const filterBar = document.getElementById('log-filter-bar');
+            const filterText = document.getElementById('log-filter-text');
+            const stepName = STEP_NAMES[stepId] || stepId;
+            filterText.textContent = `正在显示「${stepName}」的日志`;
+            filterBar.style.display = 'block';
+
+            // 遍历所有日志条目，匹配 stepId
+            const entries = logContainer.querySelectorAll('.log-entry');
+            let visibleCount = 0;
+            entries.forEach(entry => {
+                const sid = entry.dataset.stepId || '';
+                if (sid === stepId) {
+                    entry.style.display = '';
+                    visibleCount++;
+                } else {
+                    entry.style.display = 'none';
+                }
+            });
+
+            // 高亮对应的步骤卡片
+            document.querySelectorAll('.step-item.step-filter-active').forEach(el => {
+                el.classList.remove('step-filter-active');
+            });
+            const stepDiv = document.getElementById(`step-${stepId}`);
+            if (stepDiv) {
+                const stepItem = stepDiv.closest('.step-item');
+                if (stepItem) stepItem.classList.add('step-filter-active');
+            }
+
+            addLogEntry(`已过滤：仅显示「${stepName}」相关日志（${visibleCount} 条）`, 'info', stepId);
+            logContainer.scrollTop = logContainer.scrollHeight;
+        }
+
+        /* ====================================================
+           clearLogFilter：清除日志过滤，显示全部
+           ==================================================== */
+        function clearLogFilter() {
+            activeFilterStep = '';
+
+            const filterBar = document.getElementById('log-filter-bar');
+            filterBar.style.display = 'none';
+
+            // 显示所有日志
+            const entries = logContainer.querySelectorAll('.log-entry');
+            entries.forEach(entry => {
+                entry.style.display = '';
+            });
+
+            // 移除步骤高亮
+            document.querySelectorAll('.step-item.step-filter-active').forEach(el => {
+                el.classList.remove('step-filter-active');
+            });
+
+            // 移除日志高亮
+            document.querySelectorAll('.log-entry.active-log').forEach(el => {
+                el.classList.remove('active-log');
+            });
+
+            addLogEntry('已清除过滤，显示所有日志。', 'info');
+        }
+
+        /* ====================================================
+           更新 addLogEntry：当有过滤时，新日志也应用过滤规则
+           ==================================================== */
+        const _origAddLogEntry = addLogEntry;
+        addLogEntry = function(text, type = 'info', stepId = '') {
+            _origAddLogEntry(text, type, stepId);
+            // 如果有活跃过滤，对新加的日志进行显隐控制
+            if (activeFilterStep) {
+                const entries = logContainer.querySelectorAll('.log-entry');
+                if (entries.length > 0) {
+                    const lastEntry = entries[entries.length - 1];
+                    const sid = lastEntry.dataset.stepId || '';
+                    if (sid !== activeFilterStep) {
+                        lastEntry.style.display = 'none';
+                    }
+                }
+            }
+        };
+
+        /* ====================================================
+           步骤卡片点击事件：点击步骤过滤日志
+           ==================================================== */
+        document.addEventListener('click', function(e) {
+            const stepItem = e.target.closest('.step-item');
+            if (stepItem) {
+                // 找到 step-{id} 的 div（排除 step-icon- 开头的图标元素）
+                const allStepDivs = stepItem.querySelectorAll('[id^="step-"]');
+                let stepId = '';
+                for (const div of allStepDivs) {
+                    const id = div.id.replace('step-', '');
+                    if (id && !id.startsWith('icon-')) {
+                        stepId = id;
+                        break;
+                    }
+                }
+                if (stepId) {
+                    filterLogByStep(stepId);
+                }
+            }
+        });
+
+        /* ====================================================
+           页面初始化逻辑
+           ==================================================== */
+        if (!TASK_ID) {
+            // 如果没有 task_id，提示用户先提交任务
+            taskTitle.textContent = '未选择任务';
+            taskInfo.innerHTML = '请先提交模拟任务。';
+            globalStatus.className = 'status-badge status-pending';
+            globalStatus.textContent = '未开始';
+            pauseBtn.disabled = true;
+            cancelBtn.disabled = true;
+        } else {
+            // 有 task_id：立即获取一次状态和日志，然后每 3 秒轮询
+            scheduleNextPoll();
+        }
+
+        // 获取近期任务列表（无论是否有当前任务都显示）
+        fetchRecentTasks();
+    </script>
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha1/dist/js/bootstrap.bundle.min.js"></script>
+</body>
+</html>

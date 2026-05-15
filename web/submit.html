@@ -1,0 +1,613 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>提交模拟任务 - WebMD 模拟器</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha1/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.8.1/font/bootstrap-icons.css">
+    <style>
+        body {
+            background-color: #f8f9fa;
+            padding-top: 20px;
+        }
+        .navbar-brand {
+            font-weight: bold;
+        }
+        .form-container {
+            background: white;
+            border-radius: 15px;
+            box-shadow: 0 4px 20px rgba(0,0,0,0.08);
+            padding: 2.5rem;
+            margin-bottom: 3rem;
+        }
+        .form-section {
+            border-left: 4px solid #6a11cb;
+            padding-left: 1rem;
+            margin-bottom: 2rem;
+        }
+        .btn-submit {
+            background: linear-gradient(135deg, #6a11cb 0%, #2575fc 100%);
+            border: none;
+            padding: 0.75rem 2rem;
+            font-size: 1.1rem;
+            border-radius: 50px;
+        }
+        .file-upload-area {
+            border: 2px dashed #6a11cb;
+            border-radius: 10px;
+            padding: 3rem;
+            text-align: center;
+            background-color: #f8f9ff;
+            cursor: pointer;
+            transition: background 0.3s;
+        }
+        .file-upload-area:hover {
+            background-color: #eef1ff;
+        }
+        .file-upload-area i {
+            font-size: 3rem;
+            color: #6a11cb;
+            margin-bottom: 1rem;
+        }
+        #file-name {
+            margin-top: 1rem;
+            font-weight: 500;
+        }
+        .required::after {
+            content: " *";
+            color: #dc3545;
+        }
+        .step-card {
+            border-left: 4px solid #6a11cb;
+            padding-left: 1rem;
+            margin-bottom: 2rem;
+        }
+        .upload-zone {
+            border: 2px dashed #6a11cb;
+            border-radius: 10px;
+            padding: 2rem;
+            text-align: center;
+            background-color: #f8f9ff;
+            cursor: pointer;
+            transition: background 0.3s;
+        }
+        .upload-zone:hover {
+            background-color: #eef1ff;
+        }
+        .upload-zone-sm {
+            padding: 1.2rem;
+        }
+        .upload-icon {
+            font-size: 2rem;
+            color: #6a11cb;
+            margin-bottom: 0.5rem;
+        }
+        .upload-zone-sm .upload-icon {
+            font-size: 1.5rem;
+        }
+        .file-info {
+            padding: 10px 15px;
+            background: #e8f5e9;
+            border-radius: 8px;
+            margin-top: 10px;
+            display: flex;
+            align-items: center;
+        }
+        .file-info i {
+            font-size: 1.2rem;
+            color: #2e7d32;
+        }
+    </style>
+</head>
+<body>
+    <nav class="navbar navbar-expand-lg navbar-light bg-white shadow-sm mb-4">
+        <div class="container">
+            <a class="navbar-brand" href="index.html">
+                <i class="bi bi-cpu me-2"></i>WebMD 模拟器
+            </a>
+            <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav">
+                <span class="navbar-toggler-icon"></span>
+            </button>
+            <div class="collapse navbar-collapse" id="navbarNav">
+                <ul class="navbar-nav ms-auto">
+                    <li class="nav-item">
+                        <a class="nav-link active" href="submit.html">提交任务</a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="gaussian.html">量子化学</a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="ai_assistant.html">AI 助手</a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="run.html">运行任务</a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="results.html">结果展示</a>
+                    </li>
+                </ul>
+            </div>
+        </div>
+    </nav>
+
+    <div class="container">
+        <div class="row justify-content-center">
+            <div class="col-lg-10">
+                <div class="form-container">
+                    <h1 class="mb-4"><i class="bi bi-cloud-upload me-2"></i>提交新模拟任务</h1>
+                    <p class="text-muted mb-4">上传你的 PDB 文件并配置分子动力学参数。所有带 * 的字段为必填项。</p>
+
+                    <form id="simulation-form">
+            <!-- Step 1: Upload PDB -->
+            <div class="step-card" id="step-1">
+                <h4 class="mb-3">1. 上传蛋白质结构文件与配体（小分子）</h4>
+                <p class="text-muted mb-1">上传一个 PDB 格式的蛋白质结构文件</p>
+
+                <div class="upload-zone" id="uploadZone">
+                    <i class="bi bi-cloud-upload upload-icon"></i>
+                    <p class="mb-2">点击或拖拽 PDB 文件到此处</p>
+                    <small class="text-muted">仅支持 .pdb 格式</small>
+                </div>
+                <input type="file" id="pdbFile" accept=".pdb" hidden>
+                <div id="fileInfo" class="file-info" style="display:none;">
+                    <i class="bi bi-file-earmark-arrow-up me-2"></i>
+                    <span id="fileName"></span>
+                    <span id="fileSize" class="text-muted ms-2"></span>
+                    <button class="btn btn-sm btn-outline-danger ms-3" onclick="removeFile()">移除</button>
+                </div>
+
+                <hr class="my-3">
+                <p class="text-muted mb-1">小分子配体文件（可选）</p>
+                <div class="upload-zone upload-zone-sm" id="ligandUploadZone">
+                    <i class="bi bi-molecule upload-icon"></i>
+                    <p class="mb-1">点击或拖拽配体文件到此处</p>
+                    <small class="text-muted">支持 .xyz .mol2 .sdf .pdb 格式</small>
+                </div>
+                <input type="file" id="ligandFile" accept=".xyz,.mol2,.sdf,.pdb" hidden>
+                <div id="ligandFileInfo" class="file-info" style="display:none;">
+                    <i class="bi bi-file-earmark-arrow-up me-2"></i>
+                    <span id="ligandFileName"></span>
+                    <span id="ligandFileSize" class="text-muted ms-2"></span>
+                    <button class="btn btn-sm btn-outline-danger ms-3" onclick="removeLigandFile()">移除</button>
+                </div>
+            </div>
+
+                        <!-- Quantum Chemistry Configuration (Gaussian) -->
+                        <div class="step-card" id="step-gaussian">
+                            <h4 class="mb-3"><i class="bi bi-cpu me-2"></i> 量子化学计算（Gaussian）</h4>
+                            <p class="text-muted mb-2">使用 Gaussian 对小分子配体进行量子化学计算，优化后的结构将用于后续对接。</p>
+
+                            <div class="mb-3 form-check">
+                                <input type="checkbox" class="form-check-input" id="enableGaussian" onchange="toggleGaussian()">
+                                <label class="form-check-label" for="enableGaussian">启用 Gaussian 计算（需先上传配体文件）</label>
+                            </div>
+
+                            <div id="gaussianParams" style="display:none;">
+                                <div class="alert alert-info py-2 px-3 mb-3">
+                                    <i class="bi bi-info-circle me-1"></i> Gaussian 将对配体进行量子化学计算。若同时启用了分子对接，优化后的配体结构会自动用于对接。
+                                </div>
+                                <div class="row">
+                                    <div class="col-md-4 mb-3">
+                                        <label for="gaussianCalcType" class="form-label">计算类型</label>
+                                        <select class="form-select" id="gaussianCalcType">
+                                            <option value="SP">单点能 (SP)</option>
+                                            <option value="Opt" selected>构型优化 (Opt)</option>
+                                            <option value="Freq">频率分析 (Freq)</option>
+                                            <option value="Opt+Freq">优化 + 频率 (Opt+Freq)</option>
+                                        </select>
+                                    </div>
+                                    <div class="col-md-4 mb-3">
+                                        <label for="gaussianMethod" class="form-label">计算方法</label>
+                                        <select class="form-select" id="gaussianMethod">
+                                            <option value="B3LYP">B3LYP</option>
+                                            <option value="HF">HF</option>
+                                            <option value="MP2">MP2</option>
+                                            <option value="wB97XD">wB97XD</option>
+                                        </select>
+                                    </div>
+                                    <div class="col-md-4 mb-3">
+                                        <label for="gaussianBasis" class="form-label">基组</label>
+                                        <select class="form-select" id="gaussianBasis">
+                                            <option value="6-31G(d)">6-31G(d)</option>
+                                            <option value="6-31+G(d,p)">6-31+G(d,p)</option>
+                                            <option value="6-311++G(d,p)" selected>6-311++G(d,p)</option>
+                                            <option value="cc-pVDZ">cc-pVDZ</option>
+                                            <option value="def2SVP">def2-SVP</option>
+                                        </select>
+                                    </div>
+                                </div>
+                                <div class="row">
+                                    <div class="col-md-3 mb-3">
+                                        <label for="gaussianCharge" class="form-label">电荷</label>
+                                        <input type="number" class="form-control" id="gaussianCharge" value="0">
+                                    </div>
+                                    <div class="col-md-3 mb-3">
+                                        <label for="gaussianMultiplicity" class="form-label">自旋多重度</label>
+                                        <input type="number" class="form-control" id="gaussianMultiplicity" min="1" value="1">
+                                    </div>
+                                    <div class="col-md-3 mb-3">
+                                        <label for="gaussianNProc" class="form-label">CPU 核心数</label>
+                                        <input type="number" class="form-control" id="gaussianNProc" min="1" max="64" value="4">
+                                    </div>
+                                    <div class="col-md-3 mb-3">
+                                        <label for="gaussianMem" class="form-label">内存</label>
+                                        <input type="text" class="form-control" id="gaussianMem" value="4GB">
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Molecular Docking Configuration -->
+                        <div class="step-card" id="step-docking">
+                            <h4 class="mb-3"><i class="bi bi-molecule me-2"></i> 分子对接（可选）</h4>
+                            <p class="text-muted mb-2">使用 AutoDock Vina 进行蛋白-配体分子对接，预测结合模式和结合能。</p>
+
+                            <div class="mb-3 form-check">
+                                <input type="checkbox" class="form-check-input" id="enableDocking" onchange="toggleDocking()">
+                                <label class="form-check-label" for="enableDocking">启用分子对接（需先上传配体文件）</label>
+                            </div>
+
+                            <div id="dockingParams" style="display:none;">
+                                <div class="alert alert-info py-2 px-3 mb-3">
+                                    <i class="bi bi-info-circle me-1"></i> 对接将在 pdb2gmx 处理后自动运行，对接结果不影响后续 MD 模拟流程。
+                                </div>
+                                <div class="row">
+                                    <div class="col-md-4 mb-3">
+                                        <label for="centerX" class="form-label">搜索框中心 X (Å)</label>
+                                        <input type="number" class="form-control" id="centerX" step="0.1" value="0">
+                                    </div>
+                                    <div class="col-md-4 mb-3">
+                                        <label for="centerY" class="form-label">搜索框中心 Y (Å)</label>
+                                        <input type="number" class="form-control" id="centerY" step="0.1" value="0">
+                                    </div>
+                                    <div class="col-md-4 mb-3">
+                                        <label for="centerZ" class="form-label">搜索框中心 Z (Å)</label>
+                                        <input type="number" class="form-control" id="centerZ" step="0.1" value="0">
+                                    </div>
+                                </div>
+                                <div class="row">
+                                    <div class="col-md-4 mb-3">
+                                        <label for="sizeX" class="form-label">搜索框大小 X (Å)</label>
+                                        <input type="number" class="form-control" id="sizeX" step="0.1" value="20">
+                                    </div>
+                                    <div class="col-md-4 mb-3">
+                                        <label for="sizeY" class="form-label">搜索框大小 Y (Å)</label>
+                                        <input type="number" class="form-control" id="sizeY" step="0.1" value="20">
+                                    </div>
+                                    <div class="col-md-4 mb-3">
+                                        <label for="sizeZ" class="form-label">搜索框大小 Z (Å)</label>
+                                        <input type="number" class="form-control" id="sizeZ" step="0.1" value="20">
+                                    </div>
+                                </div>
+                                <div class="row">
+                                    <div class="col-md-4 mb-3">
+                                        <label for="exhaustiveness" class="form-label">搜索精度 (Exhaustiveness)</label>
+                                        <input type="number" class="form-control" id="exhaustiveness" min="1" max="100" value="8">
+                                        <small class="text-muted">值越高搜索越彻底，耗时越长（建议 8-20）</small>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Force Field & Water Model -->
+                        <div class="form-section">
+                            <h4 class="mb-3">2. 力场与溶剂化</h4>
+                            <div class="row">
+                                <div class="col-md-6 mb-3">
+                                    <label for="forcefield" class="form-label required">力场</label>
+                                    <select class="form-select" id="forcefield" required>
+                                        <option value="" selected disabled>选择力场</option>
+                                        <option value="amber99sb-ildn">AMBER99SB-ILDN</option>
+                                        <option value="amber19sb">AMBER19SB-ff19SB</option>
+                                        <option value="charmm36">CHARMM36</option>
+                                        <option value="opls-aa">OPLS-AA</option>
+                                        <option value="gromos54a7">GROMOS 54A7</option>
+                                    </select>
+                                </div>
+                                <div class="col-md-3 mb-3">
+                                    <label for="ph" class="form-label">pH</label>
+                                    <input type="number" class="form-control" id="ph" min="0" max="14" step="0.1" value="7.0">
+                                    <small class="form-text text-muted">调整组氨酸质子化状态（7.0=中性）</small>
+                                </div>
+                                <div class="col-md-3 mb-3">
+                                    <label for="water" class="form-label required">水模型</label>
+                                    <select class="form-select" id="water" required>
+                                        <option value="" selected disabled>选择水模型</option>
+                                        <option value="tip3p">TIP3P</option>
+                                        <option value="tip4p">TIP4P</option>
+                                        <option value="spc">SPC</option>
+                                        <option value="spce">SPC/E</option>
+                                    </select>
+                                </div>
+                            </div>
+                            <div class="row">
+                                <div class="col-md-6 mb-3">
+                                    <label for="ions" class="form-label">离子类型</label>
+                                    <select class="form-select" id="ions">
+                                        <option value="na-cl">Na+ / Cl-</option>
+                                        <option value="k-cl">K+ / Cl-</option>
+                                        <option value="mg-cl">Mg2+ / Cl-</option>
+                                        <option value="none">无离子</option>
+                                    </select>
+                                </div>
+                                <div class="col-md-6 mb-3">
+                                    <label for="conc" class="form-label">离子浓度 (mol/L)</label>
+                                    <input type="number" class="form-control" id="conc" min="0" step="0.01" value="0.15">
+                                </div>
+                            </div>
+                            <div class="mb-3 form-check">
+                                <input type="checkbox" class="form-check-input" id="noWater" onchange="toggleVacuumMode()">
+                                <label class="form-check-label" for="noWater">真空环境模拟（不添加溶剂水与离子）</label>
+                                <small class="form-text text-muted d-block">勾选后将自动禁用水模型、离子类型与离子浓度选项，跳过溶剂化和加离子步骤。</small>
+                            </div>
+                        </div>
+
+                        <!-- Simulation Parameters -->
+                        <div class="form-section">
+                            <h4 class="mb-3">3. 模拟参数</h4>
+                            <div class="row">
+                                <div class="col-md-6 mb-3">
+                                    <label for="temperature" class="form-label required">温度 (K)</label>
+                                    <input type="number" class="form-control" id="temperature" min="0" step="1" value="300" required>
+                                </div>
+                                <div class="col-md-6 mb-3">
+                                    <label for="time" class="form-label required">模拟时间 (ps)</label>
+                                    <input type="number" class="form-control" id="time" min="1" step="1" value="1000" required>
+                                    <small class="form-text text-muted">生产模拟时长（皮秒）。</small>
+                                </div>
+                            </div>
+                            <div class="row">
+                                <div class="col-md-6 mb-3">
+                                    <label for="dt" class="form-label">积分时间步长 (fs)</label>
+                                    <input type="number" class="form-control" id="dt" min="0.5" step="0.5" value="2.0">
+                                </div>
+                                <div class="col-md-6 mb-3">
+                                    <label for="pressure" class="form-label">压力 (bar)</label>
+                                    <input type="number" class="form-control" id="pressure" min="0" step="1" value="1">
+                                </div>
+                            </div>
+                            <div class="mb-3">
+                                <label for="description" class="form-label">任务描述（可选）</label>
+                                <textarea class="form-control" id="description" rows="2" placeholder="例如：溶菌酶在水中的 AMBER 力场模拟"></textarea>
+                            </div>
+                        </div>
+
+                        <!-- Submit Button -->
+                        <div class="d-grid gap-2 d-md-flex justify-content-md-end mt-5">
+                            <button type="button" class="btn btn-outline-secondary me-md-2" onclick="window.location.href='index.html'">
+                                <i class="bi bi-arrow-left me-1"></i> 返回首页
+                            </button>
+                            <button type="submit" class="btn btn-submit text-white">
+                                <i class="bi bi-play-circle me-1"></i> 开始模拟
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        /* ====================================================
+           后端 API 基础地址
+           ==================================================== */
+        const API_BASE = window.location.protocol === 'file:'
+            ? 'http://192.168.16.130:5000'
+            : window.location.origin;
+
+        /* ====================================================
+           PDB 文件上传（拖拽 + 点击）
+           ==================================================== */
+        const uploadZone = document.getElementById('uploadZone');
+        const pdbFileInput = document.getElementById('pdbFile');
+        const fileInfo = document.getElementById('fileInfo');
+        const fileName = document.getElementById('fileName');
+        const fileSize = document.getElementById('fileSize');
+
+        uploadZone.addEventListener('click', () => pdbFileInput.click());
+        uploadZone.addEventListener('dragover', (e) => { e.preventDefault(); uploadZone.style.backgroundColor = '#e6eeff'; });
+        uploadZone.addEventListener('dragleave', () => { uploadZone.style.backgroundColor = ''; });
+        uploadZone.addEventListener('drop', (e) => {
+            e.preventDefault();
+            uploadZone.style.backgroundColor = '';
+            if (e.dataTransfer.files.length) {
+                pdbFileInput.files = e.dataTransfer.files;
+                showFileInfo(e.dataTransfer.files[0]);
+            }
+        });
+        pdbFileInput.addEventListener('change', () => {
+            if (pdbFileInput.files.length) showFileInfo(pdbFileInput.files[0]);
+        });
+
+        function showFileInfo(file) {
+            fileName.textContent = file.name;
+            fileSize.textContent = '(' + (file.size / 1024).toFixed(1) + ' KB)';
+            uploadZone.style.display = 'none';
+            fileInfo.style.display = 'flex';
+        }
+
+        function removeFile() {
+            pdbFileInput.value = '';
+            uploadZone.style.display = '';
+            fileInfo.style.display = 'none';
+        }
+
+        /* ====================================================
+           配体小分子文件上传（可选）
+           ==================================================== */
+        const ligandUploadZone = document.getElementById('ligandUploadZone');
+        const ligandFileInput = document.getElementById('ligandFile');
+        const ligandFileInfo = document.getElementById('ligandFileInfo');
+        const ligandFileName = document.getElementById('ligandFileName');
+        const ligandFileSize = document.getElementById('ligandFileSize');
+
+        ligandUploadZone.addEventListener('click', () => ligandFileInput.click());
+        ligandUploadZone.addEventListener('dragover', (e) => { e.preventDefault(); ligandUploadZone.style.backgroundColor = '#e6eeff'; });
+        ligandUploadZone.addEventListener('dragleave', () => { ligandUploadZone.style.backgroundColor = ''; });
+        ligandUploadZone.addEventListener('drop', (e) => {
+            e.preventDefault();
+            ligandUploadZone.style.backgroundColor = '';
+            if (e.dataTransfer.files.length) {
+                ligandFileInput.files = e.dataTransfer.files;
+                showLigandFileInfo(e.dataTransfer.files[0]);
+            }
+        });
+        ligandFileInput.addEventListener('change', () => {
+            if (ligandFileInput.files.length) showLigandFileInfo(ligandFileInput.files[0]);
+        });
+
+        function showLigandFileInfo(file) {
+            ligandFileName.textContent = file.name;
+            ligandFileSize.textContent = '(' + (file.size / 1024).toFixed(1) + ' KB)';
+            ligandUploadZone.style.display = 'none';
+            ligandFileInfo.style.display = 'flex';
+        }
+
+        function removeLigandFile() {
+            ligandFileInput.value = '';
+            ligandUploadZone.style.display = '';
+            ligandFileInfo.style.display = 'none';
+        }
+
+        /* ====================================================
+           真空模式切换：禁用水模型、离子类型、离子浓度
+           保存原始值，取消勾选时恢复默认
+           ==================================================== */
+        function toggleVacuumMode() {
+            const checked = document.getElementById('noWater').checked;
+            const water = document.getElementById('water');
+            const ions = document.getElementById('ions');
+            const conc = document.getElementById('conc');
+
+            if (checked) {
+                water._saved = water.value;
+                ions._saved = ions.value;
+                conc._saved = conc.value;
+                water.value = '';
+                ions.value = 'none';
+                conc.value = '0';
+            } else {
+                if (water._saved) water.value = water._saved;
+                if (ions._saved) ions.value = ions._saved;
+                if (conc._saved) conc.value = conc._saved;
+            }
+            water.disabled = checked;
+            ions.disabled = checked;
+            conc.disabled = checked;
+        }
+
+        /* ====================================================
+           分子对接开关：控制对接参数区域的显示/隐藏
+           ==================================================== */
+        function toggleDocking() {
+            const checked = document.getElementById('enableDocking').checked;
+            const paramsDiv = document.getElementById('dockingParams');
+            paramsDiv.style.display = checked ? 'block' : 'none';
+            if (checked && !ligandFileInput.files.length) {
+                alert('启用分子对接需要先上传配体文件！\n请在上方"小分子配体文件"区域上传配体。');
+            }
+        }
+
+        /* ====================================================
+           Gaussian 开关：控制参数区域的显示/隐藏
+           ==================================================== */
+        function toggleGaussian() {
+            const checked = document.getElementById('enableGaussian').checked;
+            const paramsDiv = document.getElementById('gaussianParams');
+            paramsDiv.style.display = checked ? 'block' : 'none';
+            if (checked && !ligandFileInput.files.length) {
+                alert('启用 Gaussian 计算需要先上传配体文件！\n请在上方"小分子配体文件"区域上传配体。');
+            }
+        }
+
+        /* ====================================================
+           表单提交：两步流程
+           Step 1 - POST /upload-pdb  : 上传 PDB + 配体（可选）
+           Step 2 - POST /run-gromacs : 启动模拟
+           ==================================================== */
+        document.getElementById('simulation-form').addEventListener('submit', async function(e) {
+            e.preventDefault();
+
+            if (!pdbFileInput.files.length) {
+                alert('请选择一个 PDB 文件。');
+                return;
+            }
+
+            const submitBtn = this.querySelector('.btn-submit');
+            const originalText = submitBtn.innerHTML;
+            submitBtn.innerHTML = '<i class="bi bi-hourglass-split me-1"></i> 提交中...';
+            submitBtn.disabled = true;
+
+            try {
+                // Step 1: 上传文件
+                const formData = new FormData();
+                formData.append('pdb', pdbFileInput.files[0]);
+                if (ligandFileInput.files.length) {
+                    formData.append('ligand', ligandFileInput.files[0]);
+                }
+                formData.append('force_field', document.getElementById('forcefield').value);
+                formData.append('ph', document.getElementById('ph').value);
+                formData.append('water_model', document.getElementById('water').value);
+                formData.append('ion_type', document.getElementById('ions').value);
+                formData.append('ion_concentration', document.getElementById('conc').value);
+                formData.append('temperature', document.getElementById('temperature').value);
+                formData.append('simulation_time', document.getElementById('time').value);
+                formData.append('time_step', document.getElementById('dt').value);
+                formData.append('pressure', document.getElementById('pressure').value);
+                formData.append('description', document.getElementById('description').value);
+                formData.append('solvate', document.getElementById('noWater').checked ? 'false' : 'true');
+                formData.append('docking_enabled', document.getElementById('enableDocking').checked ? 'true' : 'false');
+                formData.append('center_x', document.getElementById('centerX').value);
+                formData.append('center_y', document.getElementById('centerY').value);
+                formData.append('center_z', document.getElementById('centerZ').value);
+                formData.append('size_x', document.getElementById('sizeX').value);
+                formData.append('size_y', document.getElementById('sizeY').value);
+                formData.append('size_z', document.getElementById('sizeZ').value);
+                formData.append('exhaustiveness', document.getElementById('exhaustiveness').value);
+                formData.append('gaussian_enabled', document.getElementById('enableGaussian').checked ? 'true' : 'false');
+                formData.append('gaussian_calc_type', document.getElementById('gaussianCalcType').value);
+                formData.append('gaussian_method', document.getElementById('gaussianMethod').value);
+                formData.append('gaussian_basis', document.getElementById('gaussianBasis').value);
+                formData.append('gaussian_charge', document.getElementById('gaussianCharge').value);
+                formData.append('gaussian_multiplicity', document.getElementById('gaussianMultiplicity').value);
+                formData.append('gaussian_nproc', document.getElementById('gaussianNProc').value);
+                formData.append('gaussian_mem', document.getElementById('gaussianMem').value);
+
+                const uploadRes = await fetch(`${API_BASE}/upload-pdb`, {
+                    method: 'POST',
+                    body: formData
+                });
+
+                if (!uploadRes.ok) {
+                    throw new Error(`上传失败，服务器返回: ${uploadRes.status}`);
+                }
+
+                const uploadResult = await uploadRes.json();
+                const taskId = uploadResult.task_id;
+
+                // Step 2: 运行 GROMACS 模拟
+                const runRes = await fetch(`${API_BASE}/run-gromacs`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ task_id: taskId })
+                });
+
+                if (!runRes.ok) {
+                    throw new Error(`启动模拟失败，服务器返回: ${runRes.status}`);
+                }
+
+                alert('任务提交成功！即将跳转到监控页面。');
+                window.location.href = `run.html?task_id=${taskId}`;
+
+            } catch (err) {
+                alert('错误: ' + err.message);
+            } finally {
+                submitBtn.innerHTML = originalText;
+                submitBtn.disabled = false;
+            }
+        });
+    </script>
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha1/dist/js/bootstrap.bundle.min.js"></script>
+</body>
+</html>
